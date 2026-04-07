@@ -9,11 +9,15 @@ consumption, and store the results in its dedicated database.
 
 - Producer:
   A simple desktop application that simulates smart meter readings by generating energy consumption values at 10-minute intervals.
+- Rabbitmq:
+  - connects Device and Monitoring microservices(device-event queue)
+  - two instances of Producer application simulate device measurements by sending messages through rabbitmq(measurement queue) 
 
   Overall conceptual architecture of the application:
   <img width="760" height="797" alt="conceptual_diag" src="https://github.com/user-attachments/assets/5ae42aaf-9616-4f16-9f52-ea199667ce64" />
 
-  Deployed using Docker
+  Deployed using Docker:
+  
   <img width="762" height="797" alt="docker_sd_a2" src="https://github.com/user-attachments/assets/7d02a475-4667-4cba-9d03-6caa378a154d" />
 
 
