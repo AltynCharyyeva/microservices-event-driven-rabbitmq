@@ -1,4 +1,4 @@
-Energy Management System (Part 2):
+## Energy Management System (Part 2):
 This project extends the previous REST-based microservices system into an event-driven architecture using RabbitMQ as a message broker and Traefik as load balancer and reverse proxy.
 Here is an illustration of how a basic queue between Producer and Consumer works:
 <img width="720" height="318" alt="producer-consumer" src="https://github.com/user-attachments/assets/7320ebb5-d5b1-44a2-9966-2f5b08fddfa1" />
