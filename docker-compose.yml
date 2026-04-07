@@ -1,0 +1,174 @@
+services:
+  frontend:
+    build:
+      context: ./my_app
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`frontend.localhost`) || PathPrefix(`/frontend`)"
+      - "traefik.http.middlewares.frontend-strip.stripprefix.prefixes=/frontend"
+      - "traefik.http.routers.frontend.middlewares=frontend-strip"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+    ports:
+      - "3000:3000"
+    networks:
+      shared_network:
+
+  personservice:
+    build:
+      context: ./mcs_person
+    environment:
+      DB_IP: persondb
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: Texturing77))
+      DB_DBNAME: persondb
+    depends_on:
+      - persondb
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.personservice.rule=Host(`personservice.localhost`) || PathPrefix(`/personservice`)"
+      - "traefik.http.middlewares.personservice-strip.stripprefix.prefixes=/personservice"
+      - "traefik.http.routers.personservice.middlewares=personservice-strip"
+      - "traefik.http.services.personservice.loadbalancer.server.port=8080"
+      - "traefik.http.routers.personservice.entryPoints=web"
+    networks:
+      shared_network:
+
+  persondb:
+    container_name: persondb
+    image: mysql
+    environment:
+      - MYSQL_DATABASE=persondb
+      - MYSQL_ROOT_PASSWORD=Texturing77))
+    ports:
+      - "3307:3306"
+    volumes:
+      - mydbperson:/var/lib/mysql
+    networks:
+      shared_network:
+
+  # phpmyadmin_person:
+  #   image: phpmyadmin/phpmyadmin
+  #   container_name: phpmyadmin_person
+  #   environment:
+  #     - PMA_HOST=persondb # Connect to the MySQL container
+  #     - MYSQL_ROOT_PASSWORD=Texturing77))
+  #     - PMA_USER=root # Set the MySQL user as root
+  #     - PMA_PASSWORD=Texturing77))
+  #   ports:
+  #     - "8015:80" # Access phpMyAdmin through this port
+  #   depends_on:
+  #     - persondb
+  #   networks:
+  #     - shared_network
+
+  deviceservice:
+    build:
+      context: ./mcs_device
+    environment:
+      DB_IP: devicedb
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: Texturing77))
+      DB_DBNAME: devicedb
+    depends_on:
+      - devicedb
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.deviceservice.rule=Host(`deviceservice.localhost`) || PathPrefix(`/deviceservice`)"
+      - "traefik.http.middlewares.deviceservice-strip.stripprefix.prefixes=/deviceservice"
+      - "traefik.http.routers.deviceservice.middlewares=deviceservice-strip"
+      - "traefik.http.services.deviceservice.loadbalancer.server.port=8081"
+      - "traefik.http.routers.deviceservice.entryPoints=web"
+    networks:
+      shared_network:
+
+  devicedb:
+    container_name: devicedb
+    image: mysql
+    environment:
+      - MYSQL_DATABASE=devicedb
+      - MYSQL_ROOT_PASSWORD=Texturing77))
+    ports:
+      - "3308:3306"
+    volumes:
+      - mydbdevice:/var/lib/mysql
+    networks:
+      shared_network:
+
+  #Monitoring service
+  monservice:
+    build: ./mcs_monitoring
+    environment:
+      DB_IP: monitoringdb
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: Texturing77))
+      DB_DBNAME: monitoringdb
+    depends_on:
+      - devicedb
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.monservice.rule=Host(`monservice.localhost`) || PathPrefix(`/monservice`)"
+      - "traefik.http.middlewares.monservice-strip.stripprefix.prefixes=/monservice"
+      - "traefik.http.routers.monservice.middlewares=monservice-strip"
+      - "traefik.http.services.monservice.loadbalancer.server.port=8082"
+      - "traefik.http.routers.monservice.entryPoints=web"
+    networks:
+      shared_network:
+
+  # # MySQL Database service
+  monitoringdb:
+    container_name: monitoringdb
+    image: mysql
+    environment:
+      - MYSQL_DATABASE=monitoringdb
+      - MYSQL_ROOT_PASSWORD=Texturing77))
+    ports:
+      - "3309:3306"
+    volumes:
+      - mydbmonitoring:/var/lib/mysql
+    networks:
+      - shared_network
+
+  phpmyadmin_monitoring:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin_monitoring
+    environment:
+      - PMA_HOST=monitoringdb # Connect to the MySQL container
+      - MYSQL_ROOT_PASSWORD=Texturing77))
+      - PMA_USER=root # Set the MySQL user as root
+      - PMA_PASSWORD=Texturing77))
+    ports:
+      - "8014:80" # Access phpMyAdmin through this port
+    depends_on:
+      - monitoringdb
+    networks:
+      - shared_network
+
+  reverse-proxy:
+    image: traefik:v3.2
+    command:
+      - --api.insecure=true
+      - --providers.docker
+      - --accesslog=true
+      - --accesslog.filepath=/var/log/traefik/access.log
+      - --log.level=DEBUG
+      - --entrypoints.web.address=:80
+    ports:
+      - "80:80" # HTTP traffic
+      - "8080:8080" # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - traefik_logs:/var/log/traefik
+    networks:
+      - shared_network
+
+volumes:
+  traefik_logs:
+  mydbperson:
+  mydbdevice:
+  mydbmonitoring:
+networks:
+  shared_network:
+    driver: bridge
